@@ -4,10 +4,20 @@ Projeto de Fundamentos de Ciências de Dados - Previsão de Doenças Cardíacas 
 ## Progresso do Projeto
 
 ### 1. Raw Data (Dados Brutos)
-- [ ] Descrição dos tipos de variáveis (nominal, ordinal, interval, ratio, binary)
-- [ ] Análise preliminar dos dados originais (UCMF.xls)
-- [ ] Histogramas e boxplots dos dados brutos
-- [ ] Lista de problemas identificados (outliers, missing values, inconsistências)
+- [x] **Script:** `raw_data_analysis.py`
+- [x] Descrição dos tipos de variáveis (nominal, ordinal, interval, ratio, binary)
+  - [x] `raw_01_tipos_variaveis.csv`
+- [x] Análise preliminar dos dados originais (UCMF.xls)
+- [x] Histogramas dos dados brutos
+  - [x] `raw_04_histograms_raw.png`
+- [x] Boxplots dos dados brutos
+  - [x] `raw_05_boxplots_raw.png`
+- [x] Lista de problemas identificados
+  - [x] `raw_02_problemas_identificados.csv`
+- [x] Estatísticas descritivas dos dados brutos
+  - [x] `raw_03_statistics_raw.csv`
+- [x] Distribuição TARGET (dados brutos)
+  - [x] `raw_06_target_distribution_raw.png`
 
 ### 2. Preprocessed Data (Pré-processamento)
 - [x] **Script:** `p_process.py`
@@ -17,7 +27,8 @@ Projeto de Fundamentos de Ciências de Dados - Previsão de Doenças Cardíacas 
 - [x] Limpeza de Pressão Arterial e Frequência Cardíaca
 - [x] Padronização de variáveis categóricas (SEXO, TARGET, PULSOS, SOPRO, B2)
 - [x] Remoção de colunas irrelevantes (HDA2, datas)
-- [x] **Output:** `UCMF_CLEAN.csv` (15,771 registos)
+- [x] **Output:** `UCMF_CLEAN.csv` 
+
 
 ### 3. Basic Description (Análise Descritiva - Dados Limpos)
 - [x] **Script:** `eda_basic.py`
