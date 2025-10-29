@@ -1,3 +1,6 @@
+#Usar o outro pre process, depois eliminamos isto
+
+
 import pandas as pd
 import numpy as np
 
