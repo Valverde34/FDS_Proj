@@ -10,7 +10,7 @@ plt.rcParams['figure.figsize'] = (15, 10)
 plt.rcParams['font.size'] = 10
 
 # Carregar dados limpos
-df = pd.read_csv('UCMF_CLEAN.csv')
+df = pd.read_excel(r'C:\Uni\1_ano\1_semestre\CD\FDS_Proj\src\UCMF_CLEAN.xlsx')
 
 # Definir variaveis numericas para analise
 numeric_vars = ['IDADE', 'Peso', 'Altura', 'IMC', 'PA SISTOLICA', 'PA DIASTOLICA', 'FC']
