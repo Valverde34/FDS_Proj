@@ -21,27 +21,12 @@ warnings.filterwarnings('ignore')
 sns.set_style("whitegrid")
 plt.rcParams['figure.figsize'] = (15, 10)
 
-print("="*80)
-print("MODELAÇÃO PREDITIVA & AVALIAÇÃO")
-print("="*80)
+print('\n=== MODELAÇÃO PREDITIVA & AVALIAÇÃO ===')
 
 # Carregar dados
-df = pd.read_excel(r'C:\Uni\1_ano\1_semestre\CD\FDS_Proj\src\UCMF_CLEAN.xlsx')
+df = pd.read_excel(r'./UCMF_CLEAN.xlsx')
 
-print("\n" + "="*80)
-print("IMPORTANTE: Tratamento de Multicolinearidade")
-print("="*80)
-print("\nConforme enunciado: 'if height and weight are strongly correlated with BMI,")
-print("you should use only BMI'.")
-print("\nDECISÃO: Removemos Peso e Altura porque IMC = Peso / Altura²")
-print("Manter as três variáveis criaria redundância e violaria os requisitos.")
-print("\nVARIÁVEIS FINAIS PARA MODELAÇÃO:")
-print("  ✓ IDADE")
-print("  ✓ IMC (substitui Peso + Altura)")
-print("  ✓ PA SISTOLICA")
-print("  ✓ PA DIASTOLICA")
-print("  ✓ FC")
-print("="*80)
+print('\n[1/8] Preparar dados e features...')
 
 # Preparar dados (SEM Peso e Altura - apenas IMC)
 numeric_vars = ['IDADE', 'IMC', 'PA SISTOLICA', 'PA DIASTOLICA', 'FC']
@@ -54,85 +39,60 @@ y = df_clean['NORMAL X ANORMAL'].values
 le = LabelEncoder()
 y_encoded = le.fit_transform(y)
 
-print(f"\nDados: {len(df_clean)} registos")
-print(f"Features: {len(numeric_vars)}")
-print(f"Classes: {le.classes_} → {np.unique(y_encoded)}")
-print(f"Distribuição: Normal={np.sum(y_encoded==0)}, Anormal={np.sum(y_encoded==1)}")
+
 
 # Dividir dados (70% treino, 30% teste)
 X_train, X_test, y_train, y_test = train_test_split(
     X, y_encoded, test_size=0.3, random_state=42, stratify=y_encoded
 )
 
-print(f"\nTreino: {len(X_train)} | Teste: {len(X_test)}")
+
 
 # Normalizar dados (importante para SVM e Neural Networks)
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-# ============================================================================
-# DEFINIR MODELOS
-# ============================================================================
-print("\n" + "="*80)
-print("TREINAMENTO DOS MODELOS")
-print("="*80)
-
 models = {}
 predictions = {}
 predictions_proba = {}
 
-# 1. Decision Tree
-print("\n1. Decision Tree...")
+print('\n[2/8] Treinar Decision Tree...')
 dt = DecisionTreeClassifier(random_state=42, max_depth=5, min_samples_split=20, min_samples_leaf=10)
 dt.fit(X_train, y_train)
 models['Decision Tree'] = dt
 predictions['Decision Tree'] = dt.predict(X_test)
 predictions_proba['Decision Tree'] = dt.predict_proba(X_test)[:, 1]
-print("   ✓ Treinado")
 
-# 2. Support Vector Machine
-print("\n2. Support Vector Machine (SVM)...")
+print('[3/8] Treinar SVM...')
 svm = SVC(kernel='rbf', probability=True, random_state=42, C=1.0, gamma='scale')
 svm.fit(X_train_scaled, y_train)
 models['SVM'] = svm
 predictions['SVM'] = svm.predict(X_test_scaled)
 predictions_proba['SVM'] = svm.predict_proba(X_test_scaled)[:, 1]
-print("   ✓ Treinado")
 
-# 3. Naive Bayes (Bayesian Network simplificado)
-print("\n3. Naive Bayes (Bayesian)...")
+print('[4/8] Treinar Naive Bayes...')
 nb = GaussianNB()
 nb.fit(X_train, y_train)
 models['Naive Bayes'] = nb
 predictions['Naive Bayes'] = nb.predict(X_test)
 predictions_proba['Naive Bayes'] = nb.predict_proba(X_test)[:, 1]
-print("   ✓ Treinado")
 
-# 4. Random Forest (OPCIONAL)
-print("\n4. Random Forest...")
+print('[5/8] Treinar Random Forest...')
 rf = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=5, min_samples_split=20)
 rf.fit(X_train, y_train)
 models['Random Forest'] = rf
 predictions['Random Forest'] = rf.predict(X_test)
 predictions_proba['Random Forest'] = rf.predict_proba(X_test)[:, 1]
-print("   ✓ Treinado")
 
-# 5. Neural Network (OPCIONAL)
-print("\n5. Neural Network (MLP)...")
+print('[6/8] Treinar Neural Network...')
 nn = MLPClassifier(hidden_layer_sizes=(10, 5), max_iter=1000, random_state=42, early_stopping=True)
 nn.fit(X_train_scaled, y_train)
 models['Neural Network'] = nn
 predictions['Neural Network'] = nn.predict(X_test_scaled)
 predictions_proba['Neural Network'] = nn.predict_proba(X_test_scaled)[:, 1]
-print("   ✓ Treinado")
 
-# ============================================================================
-# AVALIAR MODELOS
-# ============================================================================
-print("\n" + "="*80)
-print("AVALIAÇÃO DOS MODELOS")
-print("="*80)
+print('\n[7/8] Avaliar modelos...')
 
 results = []
 
@@ -159,30 +119,10 @@ for model_name in models.keys():
         'F1-Score': f1,
         'AUC-ROC': auc_score
     })
-    
-    print(f"\n{model_name}:")
-    print(f"  Accuracy:  {acc:.4f}")
-    print(f"  Precision: {prec:.4f}")
-    print(f"  Recall:    {rec:.4f}")
-    print(f"  F1-Score:  {f1:.4f}")
-    print(f"  AUC-ROC:   {auc_score:.4f}")
 
-# Guardar resultados
 results_df = pd.DataFrame(results)
 results_df = results_df.sort_values('F1-Score', ascending=False)
 results_df.to_csv('43_model_comparison.csv', index=False)
-
-print("\n" + "="*80)
-print("RANKING DOS MODELOS (por F1-Score):")
-print("="*80)
-print(results_df[['Modelo', 'F1-Score', 'Accuracy']].round(4))
-
-# ============================================================================
-# CONFUSION MATRICES
-# ============================================================================
-print("\n" + "="*80)
-print("MATRIZES DE CONFUSÃO")
-print("="*80)
 
 fig, axes = plt.subplots(2, 3, figsize=(20, 12))
 axes = axes.ravel()
@@ -206,15 +146,6 @@ plt.suptitle('Matrizes de Confusão - Todos os Modelos', fontsize=16, fontweight
 plt.tight_layout()
 plt.savefig('44_confusion_matrices.png', dpi=300, bbox_inches='tight')
 plt.close()
-
-print("✓ Matrizes salvas: 44_confusion_matrices.png")
-
-# ============================================================================
-# ROC CURVES
-# ============================================================================
-print("\n" + "="*80)
-print("CURVAS ROC")
-print("="*80)
 
 fig, ax = plt.subplots(figsize=(12, 10))
 
@@ -244,8 +175,6 @@ plt.tight_layout()
 plt.savefig('45_roc_curves.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-print("✓ Curvas ROC salvas: 45_roc_curves.png")
-
 # ============================================================================
 # COMPARAÇÃO DE MÉTRICAS
 # ============================================================================
@@ -273,15 +202,6 @@ plt.tight_layout()
 plt.savefig('46_metrics_comparison.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-print("✓ Comparação de métricas salva: 46_metrics_comparison.png")
-
-# ============================================================================
-# FEATURE IMPORTANCE (Decision Tree e Random Forest)
-# ============================================================================
-print("\n" + "="*80)
-print("FEATURE IMPORTANCE")
-print("="*80)
-
 fig, axes = plt.subplots(1, 2, figsize=(18, 6))
 
 # Decision Tree
@@ -308,8 +228,6 @@ plt.tight_layout()
 plt.savefig('47_feature_importance_models.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-print("✓ Feature importance salva: 47_feature_importance_models.png")
-
 # ============================================================================
 # VISUALIZAR ÁRVORE DE DECISÃO
 # ============================================================================
@@ -321,25 +239,11 @@ plt.tight_layout()
 plt.savefig('48_decision_tree_visualization.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-print("✓ Árvore de decisão visualizada: 48_decision_tree_visualization.png")
-
-# ============================================================================
-# CLASSIFICATION REPORTS
-# ============================================================================
-print("\n" + "="*80)
-print("RELATÓRIOS DETALHADOS")
-print("="*80)
-
 reports = []
 
 for model_name in models.keys():
     y_pred = predictions[model_name]
     report = classification_report(y_test, y_pred, target_names=le.classes_, output_dict=True)
-    
-    print(f"\n{model_name}:")
-    print(classification_report(y_test, y_pred, target_names=le.classes_))
-    
-    # Salvar em lista
     for label in le.classes_:
         reports.append({
             'Modelo': model_name,
@@ -352,13 +256,6 @@ for model_name in models.keys():
 
 reports_df = pd.DataFrame(reports)
 reports_df.to_csv('49_classification_reports.csv', index=False)
-
-# ============================================================================
-# CROSS-VALIDATION
-# ============================================================================
-print("\n" + "="*80)
-print("VALIDAÇÃO CRUZADA (5-Fold)")
-print("="*80)
 
 cv_results = []
 
@@ -376,44 +273,10 @@ for model_name, model in models.items():
         'CV_F1_Mean': scores.mean(),
         'CV_F1_Std': scores.std()
     })
-    
-    print(f"{model_name}: {scores.mean():.4f} ± {scores.std():.4f}")
 
 cv_df = pd.DataFrame(cv_results)
 cv_df = cv_df.sort_values('CV_F1_Mean', ascending=False)
 cv_df.to_csv('50_cross_validation_results.csv', index=False)
 
-# ============================================================================
-# RESUMO FINAL
-# ============================================================================
-print("\n" + "="*80)
-print("RESUMO FINAL")
-print("="*80)
-
-print("\nArquivos gerados:")
-print("  43_model_comparison.csv")
-print("  44_confusion_matrices.png")
-print("  45_roc_curves.png")
-print("  46_metrics_comparison.png")
-print("  47_feature_importance_models.png")
-print("  48_decision_tree_visualization.png")
-print("  49_classification_reports.csv")
-print("  50_cross_validation_results.csv")
-
-print("\n" + "="*80)
-print("MELHOR MODELO")
-print("="*80)
-
-best_model = results_df.iloc[0]
-print(f"\n🏆 Modelo: {best_model['Modelo']}")
-print(f"   Accuracy:  {best_model['Accuracy']:.4f}")
-print(f"   Precision: {best_model['Precision']:.4f}")
-print(f"   Recall:    {best_model['Recall']:.4f}")
-print(f"   F1-Score:  {best_model['F1-Score']:.4f}")
-print(f"   AUC-ROC:   {best_model['AUC-ROC']:.4f}")
-
-print("\n" + "="*80)
-print("TOP 3 MODELOS (por F1-Score):")
-print("="*80)
-for i, row in results_df.head(3).iterrows():
-    print(f"{i+1}. {row['Modelo']}: F1={row['F1-Score']:.4f}, AUC={row['AUC-ROC']:.4f}")
+print('\n[8/8] Gerar visualizações e relatórios...')
+print('\nModelação Preditiva concluída')

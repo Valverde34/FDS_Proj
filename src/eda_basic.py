@@ -10,12 +10,16 @@ plt.rcParams['figure.figsize'] = (15, 10)
 plt.rcParams['font.size'] = 10
 
 # Carregar dados limpos
-df = pd.read_excel(r'C:\Uni\1_ano\1_semestre\CD\FDS_Proj\src\UCMF_CLEAN.xlsx')
+df = pd.read_excel(r'./UCMF_CLEAN.xlsx')
+
+print("\n=== ANÁLISE EXPLORATÓRIA (EDA) ===")
+print(f"Registos carregados: {len(df)}")
 
 # Definir variaveis numericas para analise
 numeric_vars = ['IDADE', 'Peso', 'Altura', 'IMC', 'PA SISTOLICA', 'PA DIASTOLICA', 'FC']
 
 # Summaries - calcular estatisticas resumo (media, mediana, quartis, desvio padrao, variancia, amplitude, IQR, assimetria, curtose)
+print("\n[1/7] Calcular estatísticas descritivas...")
 # Criar tabela vazia para guardar estatisticas
 stats_summary = pd.DataFrame()
 
@@ -45,13 +49,12 @@ for var in numeric_vars:
 
 # Trocar as colunas pelas linhas
 stats_summary = stats_summary.T
-print("Estatísticas descritivas completas:")
-print(stats_summary.round(2))
 
 # Guardar estatisticas em ficheiro CSV
 stats_summary.to_csv('01_statistics_summary.csv')
 
 # Histograms - Distribuicoes com densidade
+print("[2/7] Gerar histogramas com densidade...")
 # Criar figura com subplots (3 linhas x 3 colunas)
 fig, axes = plt.subplots(3, 3, figsize=(18, 14))
 axes = axes.ravel()  # Transformar matriz de eixos em lista
@@ -90,6 +93,7 @@ plt.savefig('02_histograms_density.png', dpi=300, bbox_inches='tight')
 plt.close()
 
 # Boxplots - Identificar valores fora do padrao (outliers)
+print("[3/7] Gerar boxplots...")
 # Criar figura com subplots (2 linhas x 4 colunas)
 fig, axes = plt.subplots(2, 4, figsize=(20, 10))
 axes = axes.ravel()
@@ -134,6 +138,7 @@ plt.savefig('03_boxplots.png', dpi=300, bbox_inches='tight')
 plt.close()
 
 # Spread Measures - Medidas de dispersao
+print("[4/7] Calcular medidas de dispersão...")
 # Criar tabela vazia para medidas de dispersao
 spread_measures = pd.DataFrame()
 
@@ -153,13 +158,12 @@ for var in numeric_vars:
 
 # Trocar linhas por colunas
 spread_measures = spread_measures.T
-print("\nMedidas de Dispersão:")
-print(spread_measures.round(2))
 
 # Guardar em CSV
 spread_measures.to_csv('04_spread_measures.csv')
 
 # Distribuicao da Variavel TARGET
+print("[5/7] Analisar distribuição da variável TARGET...")
 # Criar figura com 2 subplots (grafico de barras + pizza)
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
@@ -191,6 +195,7 @@ plt.savefig('05_target_distribution.png', dpi=300, bbox_inches='tight')
 plt.close()
 
 # Distribuições categóricas
+print("[6/7] Analisar variáveis categóricas...")
 # Definir variaveis categoricas para analisar
 categorical_vars = ['SEXO', 'PULSOS', 'SOPRO', 'B2', 'PPA']
 
@@ -226,6 +231,7 @@ plt.savefig('06_categorical_distributions.png', dpi=300, bbox_inches='tight')
 plt.close()
 
 # Teste de normalidade
+print("[7/7] Executar testes de normalidade...")
 # Testar se os dados seguem uma distribuicao normal
 normality_tests = pd.DataFrame()
 
@@ -248,8 +254,8 @@ for var in numeric_vars:
 
 # Trocar as linhas com as colunas
 normality_tests = normality_tests.T
-print("\nTestes de Normalidade (alpha=0.05):")
-print(normality_tests.round(4))
 
 # Guardar em CSV
 normality_tests.to_csv('07_normality_tests.csv')
+
+print("\nAnálise exploratória concluída")

@@ -10,11 +10,10 @@ plt.rcParams['figure.figsize'] = (15, 10)
 plt.rcParams['font.size'] = 10
 
 # Carregar dados brutos (originais)
-df = pd.read_excel(r'C:\Uni\1_ano\1_semestre\CD\FDS_Proj\UCMF.xls')
+df = pd.read_excel(r'../UCMF.xls')
 
-print("Análise dos dados brutos (RAW DATA)\n")
-print(f"Total de registos: {len(df)}")
-print(f"Total de variáveis: {len(df.columns)}")
+print("\n=== ANÁLISE DE DADOS BRUTOS ===")
+print(f"Registos: {len(df)} | Variáveis: {len(df.columns)}")
 
 # DESCRICAO DOS TIPOS DE VARIAVEIS
 tipos_variaveis = {
@@ -41,9 +40,6 @@ tipos_variaveis = {
     'MOTIVO2': 'Nominal (segundo motivo de encaminhamento)'
 }
 
-for var, tipo in tipos_variaveis.items():
-    print(f"{var:20s} -> {tipo}")
-
 # Guardar tipos de variaveis em CSV
 tipos_df = pd.DataFrame(list(tipos_variaveis.items()), columns=['Variavel', 'Tipo'])
 tipos_df.to_csv('raw_01_tipos_variaveis.csv', index=False)
@@ -62,14 +58,11 @@ df['FC_num'] = pd.to_numeric(df['FC'], errors='coerce')
 
 # Duplicados
 duplicados = df.duplicated(subset=['ID']).sum()
-print(f"\nDuplicados (por ID): {duplicados}")
 problemas.append(f"Duplicados: {duplicados} registos")
 
 # Idades problematicas
 idades_negativas = (df['IDADE_num'] < 0).sum()
 idades_maiores = (df['IDADE_num'] > 19).sum()
-print(f"Idades negativas: {idades_negativas}")
-print(f"Idades > 19 anos: {idades_maiores}")
 problemas.append(f"Idades negativas: {idades_negativas}")
 problemas.append(f"Idades > 19 anos: {idades_maiores}")
 
@@ -77,20 +70,15 @@ problemas.append(f"Idades > 19 anos: {idades_maiores}")
 pesos_zero = (df['Peso_num'] == 0).sum()
 alturas_zero = (df['Altura_num'] == 0).sum()
 pesos_negativos = (df['Peso_num'] < 0).sum()
-print(f"\nPeso = 0: {pesos_zero}")
-print(f"Altura = 0: {alturas_zero}")
-print(f"Peso negativo: {pesos_negativos}")
 problemas.append(f"Peso = 0: {pesos_zero}")
 problemas.append(f"Altura = 0: {alturas_zero}")
 problemas.append(f"Peso negativo: {pesos_negativos}")
 
 # Missing values significativos
-print(f"\nMissing values por coluna (> 5%):")
 missing = df.isnull().sum()
 missing_pct = (missing / len(df)) * 100
 missing_significativo = missing_pct[missing_pct > 5].sort_values(ascending=False)
 for col, pct in missing_significativo.items():
-    print(f"  {col}: {missing[col]} ({pct:.1f}%)")
     problemas.append(f"{col}: {missing[col]} missing ({pct:.1f}%)")
 
 # Salvar missing values completo em CSV
@@ -100,96 +88,64 @@ missing_df = pd.DataFrame({
     'Missing_Percentage': missing_pct.values
 }).sort_values('Missing_Percentage', ascending=False)
 missing_df.to_csv('raw_02b_missing_values.csv', index=False)
-print(f"\n✓ Missing values salvos em raw_02b_missing_values.csv")
 
 # Inconsistencias categoricas
-print(f"\nInconsistências em variaveis categóricas:")
-
 # SEXO
 sexo_unique = df['SEXO'].value_counts()
-print(f"  SEXO - valores únicos: {len(sexo_unique)}")
-print(f"    {dict(sexo_unique.head(5))}")
 problemas.append(f"SEXO: {len(sexo_unique)} valores diferentes (precisa padronização)")
 
 # TARGET
 target_unique = df['NORMAL X ANORMAL'].value_counts()
-print(f"  NORMAL X ANORMAL - valores únicos: {len(target_unique)}")
-print(f"    {dict(target_unique)}")
 problemas.append(f"TARGET: {len(target_unique)} valores diferentes (precisa padronização)")
 
 # Identificar valores fisiologicamente impossiveis
-print(f"\n" + "="*80)
-print("VALORES FISIOLOGICAMENTE IMPOSSÍVEIS (Pediatria: 0-19 anos)")
-print("="*80)
-
 impossible_values = []
 
 # FC > 300 bpm (impossivel mesmo em neonatos)
 fc_impossible = df[df['FC_num'] > 300]
 if len(fc_impossible) > 0:
-    print(f"\n FC > 300 bpm: {len(fc_impossible)} casos")
-    print(f"   Valores: {sorted(fc_impossible['FC_num'].dropna().unique())[:10]}")
     impossible_values.append({'Variavel': 'FC', 'Condicao': '> 300 bpm', 'Casos': len(fc_impossible)})
 
 # PA Sistolica > 300 mmHg (impossivel)
 pa_sist_impossible = df[df['PA_SIST_num'] > 300]
 if len(pa_sist_impossible) > 0:
-    print(f"\n PA SISTOLICA > 300 mmHg: {len(pa_sist_impossible)} casos")
-    print(f"   Valores: {sorted(pa_sist_impossible['PA_SIST_num'].dropna().unique())[:10]}")
     impossible_values.append({'Variavel': 'PA_SISTOLICA', 'Condicao': '> 300 mmHg', 'Casos': len(pa_sist_impossible)})
 
 # PA Diastolica > 200 mmHg (impossivel)
 pa_diast_impossible = df[df['PA_DIAST_num'] > 200]
 if len(pa_diast_impossible) > 0:
-    print(f"\n PA DIASTOLICA > 200 mmHg: {len(pa_diast_impossible)} casos")
-    print(f"   Valores: {sorted(pa_diast_impossible['PA_DIAST_num'].dropna().unique())[:10]}")
     impossible_values.append({'Variavel': 'PA_DIASTOLICA', 'Condicao': '> 200 mmHg', 'Casos': len(pa_diast_impossible)})
 
 # IMC > 60 (extremamente raro, suspeito)
 imc_impossible = df[df['IMC_num'] > 60]
 if len(imc_impossible) > 0:
-    print(f"\n IMC > 60: {len(imc_impossible)} casos (provavelmente erro)")
-    print(f"   Valores: {sorted(imc_impossible['IMC_num'].dropna().unique())[:10]}")
     impossible_values.append({'Variavel': 'IMC', 'Condicao': '> 60', 'Casos': len(imc_impossible)})
 
 # Altura < 30 cm (impossivel para crianca viva)
 altura_impossible = df[df['Altura_num'] < 30]
 if len(altura_impossible) > 0:
-    print(f"\n Altura < 30 cm: {len(altura_impossible)} casos")
-    print(f"   Valores: {sorted(altura_impossible['Altura_num'].dropna().unique())[:10]}")
     impossible_values.append({'Variavel': 'Altura', 'Condicao': '< 30 cm', 'Casos': len(altura_impossible)})
 
 # Peso < 1 kg (improvavel exceto prematuros extremos)
 peso_impossible = df[df['Peso_num'] < 1]
 if len(peso_impossible) > 0:
-    print(f"\n Peso < 1 kg: {len(peso_impossible)} casos")
-    print(f"   Valores: {sorted(peso_impossible['Peso_num'].dropna().unique())[:10]}")
     impossible_values.append({'Variavel': 'Peso', 'Condicao': '< 1 kg', 'Casos': len(peso_impossible)})
 
 # Idade < 0 ou > 19
 idade_impossible = df[(df['IDADE_num'] < 0) | (df['IDADE_num'] > 19)]
 if len(idade_impossible) > 0:
-    print(f"\n IDADE fora do intervalo [0-19]: {len(idade_impossible)} casos")
     impossible_values.append({'Variavel': 'IDADE', 'Condicao': '< 0 ou > 19 anos', 'Casos': len(idade_impossible)})
 
 # Salvar valores impossiveis
 if impossible_values:
     impossible_df = pd.DataFrame(impossible_values)
     impossible_df.to_csv('raw_02c_impossible_physiological_values.csv', index=False)
-    print(f"\n✓ Valores impossíveis salvos em raw_02c_impossible_physiological_values.csv")
-else:
-    print(f"\n✓ Nenhum valor fisiologicamente impossível detectado.")
 
 # Guardar lista de problemas
 problemas_df = pd.DataFrame(problemas, columns=['Problema'])
 problemas_df.to_csv('raw_02_problemas_identificados.csv', index=False)
 
 # ESTATISTICAS DESCRITIVAS DOS DADOS BRUTOS (COMPLETO)
-print(f"\n" + "="*80)
-print("ESTATÍSTICAS DESCRITIVAS COMPLETAS")
-print("="*80)
-
-# Variaveis numericas ja convertidas anteriormente
 stats_raw = pd.DataFrame()
 
 var_mapping = {
@@ -230,10 +186,7 @@ for var_code, var_name in var_mapping.items():
             }
 
 stats_raw = stats_raw.T
-print(stats_raw.round(2))
-
 stats_raw.to_csv('raw_03_statistics_raw.csv')
-print(f"\n✓ Estatísticas completas salvas em raw_03_statistics_raw.csv")
 
 # HISTOGRAMAS DOS DADOS BRUTOS
 fig, axes = plt.subplots(3, 3, figsize=(18, 14))
@@ -263,7 +216,6 @@ for i in range(len(var_list), len(axes)):
 
 plt.tight_layout()
 plt.savefig('raw_04_histograms_raw.png', dpi=300, bbox_inches='tight')
-
 plt.close()
 
 # BOXPLOTS DOS DADOS BRUTOS
@@ -315,25 +267,23 @@ axes[0].set_title('BRUTO: Distribuição TARGET', fontsize=14, fontweight='bold'
 axes[0].set_ylabel('Número de Pacientes', fontsize=12)
 axes[0].set_xlabel('Classe', fontsize=12)
 axes[0].set_xticks(range(len(target_counts)))
-axes[0].set_xticklabels(target_counts.index, rotation=45, ha='right')
+axes[0].set_xticklabels(target_counts.index, rotation=0, ha='center')  # Sem rotação
 axes[0].grid(True, alpha=0.3, axis='y')
 
 for i, v in enumerate(target_counts.values):
-    axes[0].text(i, v + 100, f'{v}\n({v/len(df)*100:.1f}%)', 
-                ha='center', va='bottom', fontweight='bold', fontsize=11)
+    axes[0].text(i, v + 200, f'{v}\n({v/len(df)*100:.1f}%)', 
+                ha='center', va='bottom', fontweight='bold', fontsize=10)
 
-axes[1].pie(target_counts.values, labels=target_counts.index, autopct='%1.1f%%', 
+# Gráfico de pizza com labels fora do gráfico
+axes[1].pie(target_counts.values, labels=None, autopct='%1.1f%%', 
             colors=colors[:len(target_counts)], startangle=90,
             textprops={'fontsize': 12, 'fontweight': 'bold'})
+axes[1].legend(target_counts.index, loc='upper left', bbox_to_anchor=(1, 1), fontsize=11)
 axes[1].set_title('BRUTO: Proporção TARGET', fontsize=14, fontweight='bold')
 
 plt.tight_layout()
 plt.savefig('raw_06_target_distribution_raw.png', dpi=300, bbox_inches='tight')
 plt.close()
-
-print("\n" + "="*80)
-print("ANÁLISE DE DENSIDADE (KDE) - VARIÁVEIS NUMÉRICAS")
-print("="*80)
 
 # KDE Plots
 fig, axes = plt.subplots(3, 3, figsize=(20, 14))
@@ -369,14 +319,9 @@ plt.tight_layout()
 plt.savefig('raw_07_density_kde.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-print("✓ Análise de densidade (KDE) salva: raw_07_density_kde.png")
-
 # ============================================================================
 # ANÁLISE DE TODAS AS VARIÁVEIS CATEGÓRICAS
 # ============================================================================
-print("\n" + "="*80)
-print("ANÁLISE COMPLETA DE VARIÁVEIS CATEGÓRICAS")
-print("="*80)
 
 categorical_vars = ['SEXO', 'NORMAL X ANORMAL', 'Convenio', 'PULSOS', 'B2', 'SOPRO', 
                    'MOTIVO1', 'MOTIVO2', 'HDA 1', 'HDA2']
@@ -386,16 +331,11 @@ rare_categories = []  # Para categorias com frequência < 1%
 
 for var in categorical_vars:
     if var in df.columns:
-        print(f"\n{var}:")
         counts = df[var].value_counts(dropna=False)
         percentages = (counts / len(df)) * 100
         
-        print(f"  Valores únicos: {len(counts)}")
-        print(f"  Top 10 categorias:")
-        
         for idx, (cat, count) in enumerate(counts.head(10).items()):
             pct = percentages[cat]
-            print(f"    {idx+1}. '{cat}': {count} ({pct:.2f}%)")
             
             categorical_analysis.append({
                 'Variavel': var,
@@ -416,22 +356,14 @@ for var in categorical_vars:
 # Salvar análise categórica completa
 cat_df = pd.DataFrame(categorical_analysis)
 cat_df.to_csv('raw_08_categorical_analysis.csv', index=False)
-print(f"\n✓ Análise categórica completa salva: raw_08_categorical_analysis.csv")
 
 # Salvar categorias raras
 if rare_categories:
     rare_df = pd.DataFrame(rare_categories)
     rare_df = rare_df.sort_values('Percentagem', ascending=True)
     rare_df.to_csv('raw_09_rare_categories.csv', index=False)
-    print(f"✓ Categorias raras (<1%) salvas: raw_09_rare_categories.csv")
-    print(f"  Total de categorias raras: {len(rare_categories)}")
-else:
-    print(f"  Nenhuma categoria rara (<1%) detectada.")
 
 # Gráficos de barras para variáveis categóricas principais
-print("\n" + "="*80)
-print("GRÁFICOS DE FREQUÊNCIA - VARIÁVEIS CATEGÓRICAS")
-print("="*80)
 
 fig, axes = plt.subplots(3, 3, figsize=(22, 16))
 axes = axes.ravel()

@@ -19,11 +19,9 @@ plt.rcParams['figure.figsize'] = (15, 10)
 plt.rcParams['font.size'] = 10
 
 # Carregar dados limpos
-df = pd.read_excel(r'C:\Uni\1_ano\1_semestre\CD\FDS_Proj\src\UCMF_CLEAN.xlsx')
+df = pd.read_excel(r'./UCMF_CLEAN.xlsx')
 
-print("="*80)
-print("ANÁLISE MULTIVARIADA")
-print("="*80)
+print('\n=== ANÁLISE MULTIVARIADA ===')
 
 # Definir variaveis numericas
 numeric_vars = ['IDADE', 'Peso', 'Altura', 'IMC', 'PA SISTOLICA', 'PA DIASTOLICA', 'FC']
@@ -33,17 +31,7 @@ df_clean = df[numeric_vars + ['NORMAL X ANORMAL']].dropna()
 X = df_clean[numeric_vars].values
 y = df_clean['NORMAL X ANORMAL'].values
 
-print(f"\nRegistos válidos: {len(df_clean)}")
-print(f"Variáveis numéricas: {len(numeric_vars)}")
-
-# ============================================================================
-# 1. REGRESSÃO LOGÍSTICA (TARGET BINÁRIO)
-# ============================================================================
-print("\n" + "="*80)
-print("1. REGRESSÃO LOGÍSTICA MULTIVARIADA")
-print("="*80)
-print("NOTA: Como o TARGET é DICOTÔMICO (Normal/Anormal), usamos Regressão Logística")
-print("      (não Linear, pois esta assume variável contínua)")
+print('\n[1/4] Regressão Logística...')
 
 # Codificar target (Normal=0, Anormal=1)
 le = LabelEncoder()
@@ -65,10 +53,6 @@ model_logistic.fit(X_train_scaled, y_train)
 accuracy_train = model_logistic.score(X_train_scaled, y_train)
 accuracy_test = model_logistic.score(X_test_scaled, y_test)
 
-print(f"\nRegressão Logística (predição de TARGET):")
-print(f"Accuracy (treino): {accuracy_train:.4f}")
-print(f"Accuracy (teste): {accuracy_test:.4f}")
-
 # Coeficientes e Odds Ratios
 coeficientes_log = model_logistic.coef_[0]
 odds_ratios = np.exp(coeficientes_log)
@@ -81,20 +65,6 @@ coeficientes_df = pd.DataFrame({
     'Abs_Coef': np.abs(coeficientes_log)
 })
 coeficientes_df = coeficientes_df.sort_values('Abs_Coef', ascending=False)
-
-print(f"\nCoeficientes da Regressão Logística:")
-print(coeficientes_df[['Variável', 'Coeficiente', 'Odds_Ratio', 'Interpretação']].round(4))
-
-print(f"\n📊 INTERPRETAÇÃO DOS ODDS RATIOS:")
-for idx, row in coeficientes_df.iterrows():
-    var = row['Variável']
-    or_val = row['Odds_Ratio']
-    if or_val > 1:
-        percentual = (or_val - 1) * 100
-        print(f"   • {var}: OR={or_val:.3f} → Aumenta em {percentual:.1f}% a chance de Anormal")
-    else:
-        percentual = (1 - or_val) * 100
-        print(f"   • {var}: OR={or_val:.3f} → Diminui em {percentual:.1f}% a chance de Anormal")
 
 coeficientes_df.to_csv('18_logistic_regression_coefficients.csv', index=False)
 
@@ -124,14 +94,7 @@ plt.tight_layout()
 plt.savefig('19_logistic_regression_plot.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-print("✓ Gráfico salvo: 19_logistic_regression_plot.png")
-
-# ============================================================================
-# 2. MUTUAL INFORMATION
-# ============================================================================
-print("\n" + "="*80)
-print("2. MUTUAL INFORMATION")
-print("="*80)
+print('[2/4] Mutual Information...')
 
 # Calcular mutual information (importancia das variaveis para target)
 mi_scores = mutual_info_classif(X, y_encoded, random_state=42)
@@ -142,9 +105,6 @@ mi_df = pd.DataFrame({
     'MI_Score': mi_scores
 })
 mi_df = mi_df.sort_values('MI_Score', ascending=False)
-
-print("\nMutual Information Scores:")
-print(mi_df.round(4))
 mi_df.to_csv('20_mutual_information.csv', index=False)
 
 # Grafico
@@ -158,14 +118,7 @@ plt.tight_layout()
 plt.savefig('21_mutual_information_plot.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-print("✓ Gráfico salvo: 21_mutual_information_plot.png")
-
-# ============================================================================
-# 3. PCA (Principal Component Analysis)
-# ============================================================================
-print("\n" + "="*80)
-print("3. PCA (Principal Component Analysis)")
-print("="*80)
+print('[3/4] PCA...')
 
 # Normalizar dados (importante para PCA)
 scaler = StandardScaler()
@@ -178,10 +131,6 @@ X_pca = pca.fit_transform(X_scaled)
 # Variancia explicada
 var_explicada = pca.explained_variance_ratio_
 var_cumulativa = np.cumsum(var_explicada)
-
-print("\nVariância explicada por componente:")
-for i, (var, cum) in enumerate(zip(var_explicada, var_cumulativa)):
-    print(f"PC{i+1}: {var*100:.2f}% (cumulativa: {cum*100:.2f}%)")
 
 # Salvar resultados
 pca_results = pd.DataFrame({
@@ -216,8 +165,6 @@ plt.tight_layout()
 plt.savefig('23_pca_variance_plots.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-print("✓ Gráficos salvos: 23_pca_variance_plots.png")
-
 # Loadings (contribuicao de cada variavel original nas PCs)
 loadings = pca.components_.T * np.sqrt(pca.explained_variance_)
 loadings_df = pd.DataFrame(
@@ -225,8 +172,6 @@ loadings_df = pd.DataFrame(
     columns=['PC1', 'PC2', 'PC3'],
     index=numeric_vars
 )
-print("\nLoadings (contribuição das variáveis nas PCs):")
-print(loadings_df.round(3))
 loadings_df.to_csv('24_pca_loadings.csv')
 
 # Biplot (PC1 vs PC2)
@@ -258,14 +203,7 @@ plt.tight_layout()
 plt.savefig('25_pca_biplot.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-print("✓ Biplot salvo: 25_pca_biplot.png")
-
-# ============================================================================
-# 4. CLUSTER ANALYSIS
-# ============================================================================
-print("\n" + "="*80)
-print("4. CLUSTER ANALYSIS")
-print("="*80)
+print('[4/4] Clustering...')
 
 # Testar diferentes numeros de clusters (K-Means)
 inertias = []
@@ -283,7 +221,6 @@ for k in k_range:
 
 # Determinar numero otimo de clusters
 optimal_k = k_range[np.argmax(silhouette_scores)]
-print(f"\nNúmero ótimo de clusters (Silhouette): {optimal_k}")
 
 # Criar DataFrame com metricas
 cluster_metrics = pd.DataFrame({
@@ -292,8 +229,6 @@ cluster_metrics = pd.DataFrame({
     'Silhouette_Score': silhouette_scores,
     'Davies_Bouldin': db_scores
 })
-print("\nMétricas de Clustering:")
-print(cluster_metrics.round(4))
 cluster_metrics.to_csv('26_cluster_metrics.csv', index=False)
 
 # Graficos de avaliacao
@@ -326,8 +261,6 @@ plt.tight_layout()
 plt.savefig('27_cluster_evaluation.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-print("✓ Gráficos salvos: 27_cluster_evaluation.png")
-
 # Aplicar K-Means com numero otimo
 kmeans_final = KMeans(n_clusters=optimal_k, random_state=42, n_init=10)
 clusters = kmeans_final.fit_predict(X_scaled)
@@ -335,14 +268,8 @@ clusters = kmeans_final.fit_predict(X_scaled)
 # Adicionar clusters ao dataframe
 df_clean['Cluster'] = clusters
 
-# Analise dos clusters
-print(f"\nDistribuição dos Clusters:")
-print(df_clean['Cluster'].value_counts().sort_index())
-
 # Cross-tab: Cluster vs TARGET
 crosstab = pd.crosstab(df_clean['Cluster'], df_clean['NORMAL X ANORMAL'], normalize='index')
-print("\nDistribuição TARGET por Cluster (%):")
-print(crosstab.round(3) * 100)
 crosstab.to_csv('28_cluster_vs_target.csv')
 
 # Visualizacao dos clusters (PCA space)
@@ -374,12 +301,8 @@ plt.tight_layout()
 plt.savefig('29_clusters_vs_target_pca.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-print("✓ Visualização salva: 29_clusters_vs_target_pca.png")
-
 # Perfil dos clusters (medias)
 cluster_profile = df_clean.groupby('Cluster')[numeric_vars].mean()
-print("\nPerfil dos Clusters (médias):")
-print(cluster_profile.round(2))
 cluster_profile.to_csv('30_cluster_profiles.csv')
 
 # Heatmap dos perfis
@@ -394,46 +317,4 @@ plt.tight_layout()
 plt.savefig('31_cluster_profiles_heatmap.png', dpi=300, bbox_inches='tight')
 plt.close()
 
-print("✓ Heatmap salvo: 31_cluster_profiles_heatmap.png")
-
-# ============================================================================
-# RESUMO FINAL
-# ============================================================================
-print("\n" + "="*80)
-print("RESUMO DA ANÁLISE MULTIVARIADA")
-print("="*80)
-
-print("\nArquivos gerados:")
-print("  18_logistic_regression_coefficients.csv")
-print("  19_logistic_regression_plot.png")
-print("  20_mutual_information.csv")
-print("  21_mutual_information_plot.png")
-print("  22_pca_variance.csv")
-print("  23_pca_variance_plots.png")
-print("  24_pca_loadings.csv")
-print("  25_pca_biplot.png")
-print("  26_cluster_metrics.csv")
-print("  27_cluster_evaluation.png")
-print("  28_cluster_vs_target.csv")
-print("  29_clusters_vs_target_pca.png")
-print("  30_cluster_profiles.csv")
-print("  31_cluster_profiles_heatmap.png")
-
-print("\n" + "="*80)
-print("PRINCIPAIS CONCLUSÕES:")
-print("="*80)
-print(f"\n1. Regressão Logística: Accuracy = {accuracy_test:.3f}")
-print(f"   Variável mais importante: {coeficientes_df.iloc[0]['Variável']} (OR={coeficientes_df.iloc[0]['Odds_Ratio']:.3f})")
-
-print(f"\n2. Mutual Information:")
-print(f"   Variável mais informativa: {mi_df.iloc[0]['Variável']} (MI={mi_df.iloc[0]['MI_Score']:.3f})")
-
-print(f"\n3. PCA:")
-print(f"   PC1+PC2 explicam {var_cumulativa[1]*100:.1f}% da variância")
-print(f"   {np.sum(var_cumulativa >= 0.8)} componentes explicam 80% da variância")
-
-print(f"\n4. Clustering:")
-print(f"   Número ótimo de clusters: {optimal_k}")
-print(f"   Silhouette Score: {max(silhouette_scores):.3f}")
-
-print("\n✓ Análise Multivariada concluída com sucesso!")
+print('\nAnálise Multivariada concluída')

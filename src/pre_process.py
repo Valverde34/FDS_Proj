@@ -2,88 +2,47 @@ import pandas as pd
 import numpy as np
 
 # Carregar dados
-df = pd.read_excel(r'C:\Uni\1_ano\1_semestre\CD\FDS_Proj\UCMF.xls')
+df = pd.read_excel(r'../UCMF.xls')
 
-print("="*80)
-print("ANÁLISE DOS DADOS BRUTOS")
-print("="*80)
-
-# Informações básicas
-print(f"\nDimensões iniciais: {df.shape}")
-print(f"Colunas: {list(df.columns)}")
+print("\n=== PRÉ-PROCESSAMENTO DE DADOS ===")
+print(f"Dimensões iniciais: {df.shape}")
 
 # Verificar colunas com valor constante
-print("\nVerificação de colunas com valor único:")
 for col in df.columns:
     unique_vals = df[col].nunique()
-    if unique_vals == 1:
-        print(f"   - {col}: apenas 1 valor único → REMOVER")
-    elif unique_vals < 5:
-        print(f"   - {col}: {unique_vals} valores únicos")
-
-# Tipos de dados
-print("\nTipos de dados:")
-print(df.dtypes)
 
 # Missing values nos dados brutos
-print("\nValores em falta (dados brutos):")
 missing_raw = df.isnull().sum()
 missing_raw = missing_raw[missing_raw > 0].sort_values(ascending=False)
-for col, count in missing_raw.items():
-    pct = (count/len(df))*100
-    print(f"   {col}: {count} ({pct:.1f}%)")
-
-print("\n" + "="*80)
-print("PRÉ-PROCESSAMENTO")
-print("="*80)
 
 # 1. REMOVER DUPLICADOS
 inicial = len(df)
 df = df.drop_duplicates(subset=['ID'], keep='first')
 removidos = inicial - len(df)
-print(f"\n1. Duplicados removidos: {removidos}")
 
 # 2. IDADE
-print("\n2. Limpeza IDADE:")
 df['IDADE'] = pd.to_numeric(df['IDADE'], errors='coerce')
 idades_negativas = (df['IDADE'] < 0).sum()
 idades_maiores = (df['IDADE'] > 19).sum()
-print(f"   - Idades negativas: {idades_negativas}")
-print(f"   - Idades > 19 anos: {idades_maiores}")
 # Substituir por NaN 
 df.loc[(df['IDADE'] < 0) | (df['IDADE'] > 19), 'IDADE'] = np.nan
 df['IDADE'] = df['IDADE'].round(2)  
 
 # 3. PESO
-print("\n3. Limpeza PESO:")
 df['Peso'] = pd.to_numeric(df['Peso'], errors='coerce')
 pesos_invalidos = ((df['Peso'] < 0.5) | (df['Peso'] > 150)).sum()
-print(f"   - Pesos inválidos (<0.5 kg ou >150 kg): {pesos_invalidos}")
 df.loc[(df['Peso'] < 0.5) | (df['Peso'] > 150), 'Peso'] = np.nan
 
 # 4. ALTURA
-print("\n4. Limpeza ALTURA:")
 df['Altura'] = pd.to_numeric(df['Altura'], errors='coerce')
 alturas_invalidas = ((df['Altura'] < 30) | (df['Altura'] > 200)).sum()
-print(f"   - Alturas inválidas (<30 cm ou >200 cm): {alturas_invalidas}")
 df.loc[(df['Altura'] < 30) | (df['Altura'] > 200), 'Altura'] = np.nan
 
 # 4.1. VERIFICAÇÃO ADICIONAL - Outliers Extremos vs Valores Impossíveis
-print("\n4.1. Verificação de Outliers Extremos:")
-# Para garantir que não há erros de digitação (ex: 900 kg, 150 anos)
-# Já fazemos isso acima, mas vamos documentar melhor
-antes_outliers = len(df)
-
 # Filtros de segurança (valores clinicamente impossíveis)
-# IDADE: Já filtrado (0-19 anos)
-# PESO: Já filtrado (0.5-150 kg)  
-# ALTURA: Já filtrado (30-200 cm)
-# Estes limites protegem contra erros de digitação mantendo valores válidos
-
-print(f"   ✓ Filtros de valores impossíveis aplicados")
-print(f"   ✓ IDADE: 0-19 anos (pediatria)")
-print(f"   ✓ PESO: 0.5-150 kg (recém-nascido a adolescente obeso)")
-print(f"   ✓ ALTURA: 30-200 cm (prematuro a adolescente alto)")
+# IDADE: 0-19 anos (pediatria)
+# PESO: 0.5-150 kg (recém-nascido a adolescente obeso)  
+# ALTURA: 30-200 cm (prematuro a adolescente alto)
 
 # 5. IMC
 # Guardar IMC original para comparação
@@ -106,8 +65,6 @@ df.loc[(df['IMC'] < 10) | (df['IMC'] > 40), 'IMC'] = np.nan
 df = df.drop(columns=['IMC_original', 'IMC_calculado'], errors='ignore')
 
 # 5.1 FEATURE ENGINEERING - Criar categorias clinicas para IDADE e IMC
-print("\n5.1. Feature Engineering (Intervalos Clínicos):")
-
 # Criar categorias de IDADE baseadas em cardiologia pediátrica
 # Fonte: American Heart Association - Pediatric Cardiology Guidelines
 df['Categoria_Idade'] = pd.cut(df['IDADE'], 
@@ -118,45 +75,35 @@ df['Categoria_Idade'] = pd.cut(df['IDADE'],
 
 # Criar categorias de IMC para crianças/adolescentes
 # Fonte: WHO Growth Standards e CDC BMI-for-age percentiles
-# Valores aproximados (devem ser ajustados por percentis de idade, mas usamos médias)
 df['Categoria_IMC'] = pd.cut(df['IMC'],
                              bins=[0, 14, 18, 23, 30, 100],
                              labels=['Baixo_Peso', 'Normal', 'Sobrepeso', 
                                     'Obesidade', 'Obesidade_Grave'],
                              include_lowest=True)
 
-print(f"   - Categorias de Idade criadas:")
-print(f"     {df['Categoria_Idade'].value_counts().to_dict()}")
-print(f"   - Categorias de IMC criadas:")
-print(f"     {df['Categoria_IMC'].value_counts().to_dict()}")
-
 # 6. PRESSÃO ARTERIAL
-print("\n6. Limpeza PRESSÃO ARTERIAL:")
-print("   JUSTIFICATIVA CLÍNICA: Utilizamos limites fisiológicos recomendados para")
-print("   pediatria (0-19 anos) baseados em guidelines da American Academy of Pediatrics.")
-print("   PA Sistólica: 60-180 mmHg | PA Diastólica: 30-120 mmHg")
-print("   Valores fora destes intervalos são considerados erros de medição ou digitação.")
+# PA Sistólica: 60-180 mmHg | PA Diastólica: 30-120 mmHg
 df['PA SISTOLICA'] = pd.to_numeric(df['PA SISTOLICA'], errors='coerce')
 df['PA DIASTOLICA'] = pd.to_numeric(df['PA DIASTOLICA'], errors='coerce')
 sistolicas_invalidas = ((df['PA SISTOLICA'] < 60) | (df['PA SISTOLICA'] > 180)).sum()
 diastolicas_invalidas = ((df['PA DIASTOLICA'] < 30) | (df['PA DIASTOLICA'] > 120)).sum()
-print(f"   - PA Sistólicas fora do intervalo: {sistolicas_invalidas}")
-print(f"   - PA Diastólicas fora do intervalo: {diastolicas_invalidas}")
 df.loc[(df['PA SISTOLICA'] < 60) | (df['PA SISTOLICA'] > 180), 'PA SISTOLICA'] = np.nan
 df.loc[(df['PA DIASTOLICA'] < 30) | (df['PA DIASTOLICA'] > 120), 'PA DIASTOLICA'] = np.nan
 
+# 6.1. CALCULAR PPA (Pressão Arterial Média)
+df['PPA'] = np.where(
+    (df['PA SISTOLICA'].notna()) & (df['PA DIASTOLICA'].notna()),
+    df['PA DIASTOLICA'] + (df['PA SISTOLICA'] - df['PA DIASTOLICA']) / 3,
+    np.nan
+)
+
 # 7. FREQUÊNCIA CARDÍACA
-print("\n7. Limpeza FC:")
-print("   JUSTIFICATIVA CLÍNICA: FC em pediatria varia com idade, mas mantemos intervalo")
-print("   conservador (40-200 bpm) para incluir bradicardia em atletas e taquicardia febril.")
-print("   Valores extremos (FC>300) são considerados erros de digitação ou medição.")
+# FC: 40-200 bpm (intervalo conservador para pediatria)
 df['FC'] = pd.to_numeric(df['FC'], errors='coerce')
 fc_invalidas = ((df['FC'] < 40) | (df['FC'] > 200)).sum()
-print(f"   - FC fora do intervalo (40-200 bpm): {fc_invalidas}")
 df.loc[(df['FC'] < 40) | (df['FC'] > 200), 'FC'] = np.nan
 
 # 8. SEXO - padronização
-print("\n8. Padronização SEXO:")
 df['SEXO'] = df['SEXO'].astype(str).str.upper().str.strip()
 df['SEXO'] = df['SEXO'].replace({
     'MASCULINO': 'M',
@@ -165,20 +112,16 @@ df['SEXO'] = df['SEXO'].replace({
     'NAN': np.nan,
     'NONE': np.nan
 })
-print(f"   - Valores únicos: {df['SEXO'].value_counts().to_dict()}")
 
 # 9. TARGET - padronização
-print("\n9. Padronização TARGET:")
 df['NORMAL X ANORMAL'] = df['NORMAL X ANORMAL'].astype(str).str.capitalize().str.strip()
 df['NORMAL X ANORMAL'] = df['NORMAL X ANORMAL'].replace({
     'Normais': 'Normal',
     'Nan': np.nan,
     'None': np.nan
 })
-print(f"   - Valores únicos: {df['NORMAL X ANORMAL'].value_counts().to_dict()}")
 
 # 10. PULSOS - padronização
-print("\n10. Padronização PULSOS:")
 df['PULSOS'] = df['PULSOS'].astype(str).str.capitalize().str.strip()
 df['PULSOS'] = df['PULSOS'].replace({
     'Normais': 'Normal',
@@ -191,7 +134,6 @@ df['PULSOS'] = df['PULSOS'].replace({
 })
 
 # 11. SOPRO - padronização
-print("\n11. Padronização SOPRO:")
 df['SOPRO'] = df['SOPRO'].astype(str).str.capitalize().str.strip()
 df['SOPRO'] = df['SOPRO'].replace({
     'Sistólico': 'Sistolico',
@@ -203,12 +145,10 @@ df['SOPRO'] = df['SOPRO'].replace({
 })
 
 # 12. B2 - padronização
-print("\n12. Padronização B2:")
 df['B2'] = df['B2'].astype(str).str.capitalize().str.strip()
 df['B2'] = df['B2'].replace({'Nan': np.nan, 'None': np.nan})
 
-# 12.1 CONVENIO - padronização (normalizar variações)
-print("\n12.1. Padronização CONVENIO:")
+# 12.1 CONVENIO - padronização
 df['Convenio'] = df['Convenio'].astype(str).str.strip().str.upper()
 df['Convenio'] = df['Convenio'].replace({
     'CAMED': 'CAMED',
@@ -218,71 +158,78 @@ df['Convenio'] = df['Convenio'].replace({
     'NAN': np.nan,
     'NONE': np.nan
 })
-print(f"   - Valores únicos após padronização: {df['Convenio'].nunique()}")
 
 # 12.2 MOTIVO1 - padronização
-print("\n12.2. Padronização MOTIVO1:")
 df['MOTIVO1'] = df['MOTIVO1'].astype(str).str.strip()
 df['MOTIVO1'] = df['MOTIVO1'].replace({'nan': np.nan, 'None': np.nan})
-print(f"   - Valores únicos: {df['MOTIVO1'].nunique()}")
 
 # 12.3 MOTIVO2 - padronização
-print("\n12.3. Padronização MOTIVO2:")
 df['MOTIVO2'] = df['MOTIVO2'].astype(str).str.strip()
 df['MOTIVO2'] = df['MOTIVO2'].replace({
     'Outro': 'OUTRO',
     'nan': np.nan,
     'None': np.nan
 })
-print(f"   - Valores únicos: {df['MOTIVO2'].nunique()}")
 
-# 13. REMOVER COLUNAS IRRELEVANTES
-print("\n13. Remoção de colunas:")
-colunas_remover = ['HDA2', 'Atendimento', 'DN']
-colunas_removidas = [col for col in colunas_remover if col in df.columns]
-df = df.drop(columns=colunas_removidas, errors='ignore')
-print(f"   - Removidas: {', '.join(colunas_removidas)}")
-
-# 14. ELIMINAR LINHAS COM >50% MISSING (exceto SEXO e TARGET)
-print("\n14. Eliminação de linhas:")
+# 13. ELIMINAR LINHAS COM >50% MISSING
 antes_threshold = len(df)
-threshold = len(df.columns) * 0.5
+threshold = int(len(df.columns) * 0.5)
 df = df.dropna(thresh=threshold)
-print(f"   - Linhas com >50% missing: {antes_threshold - len(df)}")
+removidas = antes_threshold - len(df)
 
-# SEXO e TARGET são obrigatórios
+# 14. REMOVER COLUNAS COM >50% MISSING
+missing_threshold = len(df) * 0.5
+colunas_com_muitos_missing = []
+for col in df.columns:
+    missing_count = df[col].isnull().sum()
+    if missing_count > missing_threshold:
+        colunas_com_muitos_missing.append(col)
+        
+if colunas_com_muitos_missing:
+    df = df.drop(columns=colunas_com_muitos_missing)
+
+# 15. REMOVER COLUNAS CONSTANTES
+colunas_constantes = []
+for col in df.columns:
+    unique_count = df[col].nunique(dropna=True)
+    if unique_count <= 1:
+        colunas_constantes.append(col)
+        
+if colunas_constantes:
+    df = df.drop(columns=colunas_constantes)
+
+# 16. REMOVER COLUNA ID E OUTRAS IRRELEVANTES
+colunas_remover = ['ID', 'HDA2', 'Atendimento', 'DN']
+colunas_removidas = [col for col in colunas_remover if col in df.columns]
+if colunas_removidas:
+    df = df.drop(columns=colunas_removidas, errors='ignore')
+
+# 17. VALIDAÇÃO DE CAMPOS OBRIGATÓRIOS (SEXO e TARGET)
+# SEXO é obrigatório
 antes_sexo = len(df)
 df = df[df['SEXO'].notna()]
-print(f"   - Linhas sem SEXO: {antes_sexo - len(df)}")
 
+# TARGET é obrigatório e deve ser Normal ou Anormal
 antes_target = len(df)
 df = df[df['NORMAL X ANORMAL'].notna()]
 df = df[df['NORMAL X ANORMAL'].isin(['Normal', 'Anormal'])]
-print(f"   - Linhas sem TARGET válido: {antes_target - len(df)}")
 
 # RESUMO FINAL
-print("\n" + "="*80)
-print("RESUMO FINAL")
-print("="*80)
-print(f"\nRegistos finais: {len(df)} (de {inicial} iniciais)")
-print(f"Colunas finais: {len(df.columns)}")
-
+print("\n=== RESUMO FINAL ===")
+print(f"Registos: {len(df)} (inicial: {inicial})")
+print(f"Colunas: {len(df.columns)}")
 print(f"\nDistribuição TARGET:")
 print(df['NORMAL X ANORMAL'].value_counts())
-print(f"Balanceamento: {df['NORMAL X ANORMAL'].value_counts(normalize=True).round(3).to_dict()}")
 
-print(f"\nValores em falta por coluna (após limpeza):")
 missing = df.isnull().sum()
 missing = missing[missing > 0].sort_values(ascending=False)
-for col, count in missing.items():
-    pct = (count/len(df))*100
-    print(f"   {col}: {count} ({pct:.1f}%)")
+if len(missing) > 0:
+    print(f"\nMissing values:")
+    for col, count in missing.items():
+        pct = (count/len(df))*100
+        print(f"  {col}: {count} ({pct:.1f}%)")
 
-print(f"\nEstatísticas descritivas:")
-numeric_cols = ['IDADE', 'Peso', 'Altura', 'IMC', 'PA SISTOLICA', 'PA DIASTOLICA', 'FC']
-print(df[numeric_cols].describe().round(2))
-
-# Guardar dataset limpo como Excel (.xlsx)
-output_file = 'UCMF_CLEAN.xlsx'
+# Guardar dataset limpo
+output_file = './UCMF_CLEAN2.xlsx'
 df.to_excel(output_file, index=False, engine='openpyxl')
-print(f"\n✓ Dataset limpo salvo em: {output_file}")
+print(f"\nDataset salvo: {output_file}")
