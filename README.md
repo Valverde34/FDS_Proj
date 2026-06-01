@@ -1,156 +1,120 @@
-# FDS_Proj
-Projeto de Fundamentos de Ciências de Dados - Previsão de Doenças Cardíacas em Crianças
+# Pediatric Cardiac Disease Prediction
 
-## Pipeline de Análise
+Machine learning pipeline for predicting cardiac abnormalities in children, built on a real-world clinical dataset (UCMF) from a Portuguese pediatric cardiology unit.
 
-### 1. Raw Data Analysis → `raw_data_analysis.py`
-
-Análise exploratória dos dados brutos (UCMF.xls) antes de qualquer tratamento.
-
-**Outputs gerados:**
-```
-raw_01_tipos_variaveis.csv              # Classificação de variáveis (nominal, ordinal, etc)
-raw_02_problemas_identificados.csv      # Lista de problemas encontrados
-raw_02b_missing_values.csv              # Análise de valores ausentes
-raw_02c_impossible_physiological_values.csv  # Valores fisiologicamente impossíveis
-raw_03_statistics_raw.csv               # 15 métricas estatísticas descritivas
-raw_04_histograms_raw.png               # Histogramas das variáveis numéricas
-raw_05_boxplots_raw.png                 # Boxplots para deteção de outliers
-raw_06_target_distribution_raw.png      # Distribuição da variável TARGET
-raw_07_density_kde.png                  # Curvas de densidade KDE
-raw_08_categorical_analysis.csv         # Análise completa de 10 variáveis categóricas
-raw_09_rare_categories.csv              # Categorias raras identificadas
-raw_10_categorical_distributions.png    # Gráficos de distribuições categóricas
-```
+Built as a final project for the **Fundamentals of Data Science** course at Universidade de Aveiro (2024/2025).
 
 ---
 
-### 2. Data Preprocessing → `pre_process.py`
+## Overview
 
-Limpeza e preparação dos dados para análise.
-
-**Transformações aplicadas:**
-- Remoção de duplicados (coluna ID)
-- Validação de idades (0-19 anos)
-- Limpeza de Peso, Altura, IMC
-- Validação de PA Sistólica, PA Diastólica, FC
-- Padronização de categóricas (SEXO, TARGET, PULSOS, SOPRO, B2)
-- Remoção de colunas irrelevantes
-
-**Output gerado:**
-```
-UCMF_CLEAN.xlsx                         # Dataset limpo e pronto para análise
-```
+The goal of this project is to predict whether a child presents a normal or abnormal cardiac condition based on clinical measurements. The full pipeline covers everything from raw data exploration to predictive modelling, producing 50+ outputs including statistical reports, visualisations, and model evaluations.
 
 ---
 
-### 3. Exploratory Data Analysis → `eda_basic.py`
+## Dataset
 
-Análise descritiva detalhada dos dados limpos.
+The UCMF dataset contains anonymised pediatric cardiology records with the following features:
 
-**Outputs gerados:**
-```
-01_statistics_summary.csv               # Estatísticas completas (média, mediana, std, etc)
-02_histograms_density.png               # Histogramas com curvas de densidade
-03_boxplots.png                         # Boxplots de todas variáveis numéricas
-04_spread_measures.csv                  # Medidas de dispersão (Range, IQR, CV, MAD)
-05_target_distribution.png              # Distribuição Normal vs Anormal
-06_categorical_distributions.png        # Distribuições de variáveis categóricas
-07_normality_tests.csv                  # Testes Shapiro-Wilk e Kolmogorov-Smirnov
-```
-
----
-
-### 4. Bivariate Analysis → `bivariate_analysis.py`
-
-Análise de relações entre pares de variáveis.
-
-**Outputs gerados:**
-```
-08_correlation_pearson.csv              # Correlações de Pearson
-09_correlation_spearman.csv             # Correlações de Spearman
-10_correlation_kendall.csv              # Correlações de Kendall
-11_correlation_heatmaps.png             # Heatmaps das 3 correlações
-12_strong_correlations.csv              # Correlações fortes (|r| > 0.5)
-13_simple_regressions.csv               # Regressões lineares simples
-14_scatterplots_correlations.png        # Scatterplots com linhas de regressão
-15_ttest_normal_vs_anormal.csv          # T-tests comparando grupos
-16_boxplots_normal_vs_anormal.png       # Boxplots por grupo (Normal/Anormal)
-17_violinplots_normal_vs_anormal.png    # Violinplots por grupo
-17b_anova_categorical_vs_numeric.csv    # ANOVA para variáveis categóricas
-17c_partial_correlations.csv            # Correlações parciais (controlando IDADE)
-17d_pairplot_all_variables.png          # Matriz de scatterplots completa
-```
+| Feature | Description |
+|---|---|
+| IDADE | Patient age (0-19 years) |
+| SEXO | Sex |
+| IMC | Body Mass Index |
+| PA SISTOLICA | Systolic blood pressure |
+| PA DIASTOLICA | Diastolic blood pressure |
+| FC | Heart rate |
+| PULSOS | Pulse assessment |
+| SOPRO | Heart murmur |
+| B2 | Second heart sound |
+| NORMAL X ANORMAL | Target variable (Normal / Abnormal) |
 
 ---
 
-### 5. Multivariate Analysis → `multivariate_analysis.py`
+## Pipeline
 
-Análise de relações complexas entre múltiplas variáveis.
+### 1. Raw Data Analysis — `raw_data_analysis.py`
 
-**Outputs gerados:**
-```
-18_logistic_regression_coefficients.csv # Coeficientes e Odds Ratios
-19_logistic_regression_plot.png         # Gráficos de coeficientes e ORs
-20_mutual_information.csv               # Scores de Mutual Information
-21_mutual_information_plot.png          # Ranking de importância das variáveis
-22_pca_variance.csv                     # Variância explicada por componente
-23_pca_variance_plots.png               # Scree plot e variância cumulativa
-24_pca_loadings.csv                     # Contribuição das variáveis nas PCs
-25_pca_biplot.png                       # Biplot PC1 vs PC2
-26_cluster_metrics.csv                  # Métricas de clustering (Silhouette, Davies-Bouldin)
-27_cluster_evaluation.png               # Elbow method e análise de clusters
-28_cluster_vs_target.csv                # Distribuição TARGET por cluster
-29_clusters_vs_target_pca.png           # Clusters vs TARGET no espaço PCA
-30_cluster_profiles.csv                 # Perfil médio de cada cluster
-31_cluster_profiles_heatmap.png         # Heatmap dos perfis de clusters
-```
+Exploratory analysis of the raw dataset before any preprocessing.
+
+**Key outputs:** variable classification, missing value analysis, physiologically impossible values, descriptive statistics, histograms, boxplots, KDE density curves, categorical distributions.
+
+### 2. Data Preprocessing — `pre_process.py`
+
+Cleaning and preparation for downstream analysis.
+
+**Transformations applied:**
+- Duplicate removal (ID column)
+- Age validation (0-19 years)
+- Weight, height and BMI cleaning
+- Systolic/diastolic blood pressure and heart rate validation
+- Categorical standardisation (SEXO, TARGET, PULSOS, SOPRO, B2)
+- Irrelevant column removal
+
+**Output:** `UCMF_CLEAN.xlsx`
+
+### 3. Exploratory Data Analysis — `eda_basic.py`
+
+Detailed descriptive analysis of the cleaned dataset: statistics summary, histograms, boxplots, dispersion measures, normality tests (Shapiro-Wilk, Kolmogorov-Smirnov).
+
+### 4. Bivariate Analysis — `bivariate_analysis.py`
+
+Analysis of pairwise variable relationships: Pearson, Spearman and Kendall correlations, simple linear regressions, t-tests comparing Normal vs Abnormal groups, ANOVA for categorical variables, partial correlations controlling for age.
+
+### 5. Multivariate Analysis — `multivariate_analysis.py`
+
+Complex multi-variable relationships: logistic regression with Odds Ratios, Mutual Information scores, PCA (scree plot, biplot, loadings), K-Means clustering with Silhouette and Davies-Bouldin evaluation.
+
+### 6. Feature Selection — `feature_selection.py`
+
+Identification of the most relevant predictive variables using: F-test, Mutual Information, Random Forest importance, Gradient Boosting importance, Recursive Feature Elimination (RFE), cross-validation performance curve.
+
+### 7. Predictive Modelling — `predictive_models.py`
+
+Training and evaluation of 5 classification models:
+
+| Model | Description |
+|---|---|
+| Decision Tree | Interpretable tree-based classifier |
+| SVM | Support Vector Machine with RBF kernel |
+| Naive Bayes | Gaussian probabilistic classifier |
+| Random Forest | Ensemble of decision trees |
+| Neural Network | Multi-layer Perceptron (MLP) |
+
+**Evaluation metrics:** Accuracy, Precision, Recall, F1-score, ROC-AUC, confusion matrices, 5-fold cross-validation.
 
 ---
 
-### 6. Feature Selection → `feature_selection.py`
+## How to run
 
-Identificação das variáveis mais relevantes para predição.
+### Prerequisites
 
-**Outputs gerados:**
+```bash
+pip install pandas numpy matplotlib seaborn scikit-learn openpyxl xlrd
 ```
-31_multicolinearidade_analysis.csv      # Análise de multicolinearidade (VIF)
-32_feature_variances.csv                # Variâncias das features
-33_univariate_ftest.csv                 # F-test univariado
-34_mutual_information_scores.csv        # Scores de MI para classificação
-35_random_forest_importance.csv         # Importância via Random Forest
-36_gradient_boosting_importance.csv     # Importância via Gradient Boosting
-37_rfe_rankings.csv                     # Ranking via Recursive Feature Elimination
-38_consolidated_feature_ranking.csv     # Ranking consolidado de todas as técnicas
-39_feature_selection_comparison.png     # Comparação visual de métodos
-40_feature_selection_heatmap.png        # Heatmap de rankings
-41_cv_feature_selection.csv             # Performance com cross-validation
-42_cv_performance_vs_features.png       # Curva performance vs número de features
+
+### Run the full pipeline in order
+
+```bash
+python src/raw_data_analysis.py
+python src/pre_process.py
+python src/eda_basic.py
+python src/bivariate_analysis.py
+python src/multivariate_analysis.py
+python src/feature_selection.py
+python src/predictive_models.py
 ```
+
+Each script reads from the previous step's output. Start with `raw_data_analysis.py` and run sequentially.
 
 ---
 
-### 7. Predictive Modeling → `predictive_models.py`
+## Tech stack
 
-Treino e avaliação de modelos de classificação (Normal vs Anormal).
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+![pandas](https://img.shields.io/badge/pandas-150458?style=flat&logo=pandas&logoColor=white)
+![NumPy](https://img.shields.io/badge/NumPy-013243?style=flat&logo=numpy&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=flat&logo=scikitlearn&logoColor=white)
+![Matplotlib](https://img.shields.io/badge/Matplotlib-3776AB?style=flat&logo=python&logoColor=white)
+![seaborn](https://img.shields.io/badge/seaborn-3776AB?style=flat&logo=python&logoColor=white)
 
-**Modelos implementados:**
-- Decision Tree
-- Support Vector Machine (SVM)
-- Naive Bayes
-- Random Forest
-- Neural Network (MLP)
-
-**Outputs gerados:**
-```
-43_model_comparison.csv                 # Comparação de métricas de todos modelos
-44_confusion_matrices.png               # Matrizes de confusão (5 modelos)
-45_roc_curves.png                       # Curvas ROC com AUC
-46_metrics_comparison.png               # Comparação visual de métricas
-47_feature_importance_models.png        # Feature importance (DT e RF)
-48_decision_tree_visualization.png      # Visualização completa da árvore
-49_classification_reports.csv           # Reports detalhados por classe
-50_cross_validation_results.csv         # Resultados de validação cruzada (5-fold)
-```
-
-**Total de arquivos gerados:** 50+ (CSVs + PNGs)
